@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import Button from "@src/components/Button";
 import InputText from "@src/components/TextInput";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function LoginPage() {
     const [id, setId] = useState('');
     const [password, setPassword] = useState('');
     
+    const navigate = useNavigate();
+
     //id&&password 라면, enable=true로 변경해서 버튼 클릭이 가능하게 만들기
     const [disable, setDisable] = useState(true);
-
 
     const params = { 
         inputId: id, 
@@ -21,7 +22,10 @@ function LoginPage() {
         console.log(id, password);
 
         await axios.post('/api/auth/login', params)
-        .then(res => console.log('front:', res.data))
+            .then(res => {
+                if(res.status==200) navigate('/main')
+            } 
+          )
         .catch(err => console.error(err));
     }
 

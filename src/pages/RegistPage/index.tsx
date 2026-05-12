@@ -2,17 +2,15 @@ import Button from "@src/components/Button";
 import InputText from "@src/components/TextInput";
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router";
 
 function RegistPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    // const enableRegist = () => {
-    //     if(name&&email&&password) {
-    //         console.log('버튼 사용 가능');
-    //     }
-    // }
+    const navigate = useNavigate();
+
     const params = { 
         userName: name, 
         userPw: password, 
@@ -21,7 +19,10 @@ function RegistPage() {
 
     const onClickRegist = async() => {
         await axios.post('/api/auth/regist', params)
-        .then(res => console.log('front:', res.data))
+        .then(res => {
+                if(res.status==200) navigate('/')
+            } 
+          )
         .catch(err => console.error(err));
     }
 

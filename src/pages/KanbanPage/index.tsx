@@ -1,6 +1,7 @@
 function KanbanPage() {
     return (
         <>
+            KanbanPage
         </>
     )
 }

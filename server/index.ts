@@ -2,18 +2,25 @@ import express from "express";
 import cors from "cors";
 import mysql from "mysql2";
 import bcrypt from "bcrypt";
+import dotenv from "dotenv";
+import  jwt, { SignOptions } from "jsonwebtoken";
+import { IUser } from "../src/types";
 
-const port_num = 8000;
+// .env
+dotenv.config();
+
+// express server settings
+const port_num = process.env.EXPRESS_PORT;
 const app = express();
+
+//json 요청 파싱
+app.use(express.json());
 
 //역할
 app.use(cors({
     origin: `http://localhost:${port_num}/`, // vite 개발 서버 허용,
     credentials: true
 }));
-
-//json 요청 파싱
-app.use(express.json());
 
 //웹 서버 시작
 app.listen(port_num, ()=> {
@@ -24,21 +31,69 @@ app.listen(port_num, ()=> {
         `);
 });
 
+const SECRET_KEY = getEnv("JWT_SECRET_KEY");
+const EXPIRES_IN = getEnv("JWT_EXPIRES_IN") as SignOptions["expiresIn"] ;
+
+//환경변수 가져오기
+function getEnv(key: string): string {
+    const value = process.env[key];
+
+    if (!value) {
+        throw new Error(`Missing env: ${key}`);
+    }
+
+    return value;
+}
+
+
 // 로그인 api
 app.post('/auth/login', (req, res) => {
     const { inputId, inputPw } = req.body;
-    console.log(req.body);
 
     var query = `SELECT * FROM users WHERE email = ?;`
     db.query(query, [inputId], (err, rslt) => {
+        const userData:IUser = {
+            idx: rslt[0].idx,
+            name: rslt[0].name,
+            email: rslt[0].email,
+            password: rslt[0].password
+        }
+
         if(err) {
             console.error('ERROR::LOGIN::SELECT', err);
             return;
         }
-
-        console.log("result :: ", res);
+        else {
+            bcrypt.compare(inputPw, rslt[0].password, (err, compareRes) => {
+                if(!compareRes) {
+                    console.error("password diff!")
+                    res.status(500).json({ success: false, message: `LOGIN FAIL - ${userData.name}님 로그인 실패`});
+                } else {
+                    generateToken(userData)
+                    res.status(200).json({ success: true, message: `LOGIN SUCCESS - ${userData.name}님 로그인 성공`});
+                }
+            })
+            
+        }
+        
     })
 })
+
+//JWT 생성 함수
+function generateToken(userPayload: IUser):string {
+    const token = jwt.sign(
+        {
+            idx: userPayload.idx,
+            name: userPayload.name,
+            email: userPayload.email
+        },
+        SECRET_KEY,
+        { expiresIn: EXPIRES_IN }
+    );
+
+    console.log(token);
+    return token;
+}
 
 
 // 회원가입 api
@@ -49,11 +104,11 @@ app.post('/auth/regist', (req, res) => {
     db.query(query, [userName, userPwHash, userEmail], (err, rslt) => {
         if(err) {
             console.error('ERROR::REGISTER::INSERT', err);
-            res.status(500).json({ success: false, message: 'Database INSERT Error'});
+            res.status(500).json({ success: false, message: `DB FAIL - ${userName}님 회원가입 실패`});
             return;
         }
         console.log(userPw, " / " , userPwHash);
-        res.status(200).json({ success: true });
+        res.status(200).json({ success: true, message: `DB SUCCESS - ${userName}님 회원가입 완료` });
     } )
 });
 
