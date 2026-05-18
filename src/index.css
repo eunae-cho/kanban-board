@@ -1,11 +1,13 @@
 @import "tailwindcss";
 
 @theme {
+    --color-common-black: #121212;
     --color-common-red: #EC0000;
     --color-gray-20: #F4F4F5;
     --color-light-gray-100: #F1F1F1;
     --color-light-purple-100: #F0EBFF;
     --color-light-purple-disable: #D6C2FD;
+    --color-light-purple-able: #7C35FF;
 }
 
 html, body {

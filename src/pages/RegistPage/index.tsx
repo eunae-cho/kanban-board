@@ -1,6 +1,6 @@
 import Button from "@src/components/Button";
 import InputText from "@src/components/TextInput";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router";
 
@@ -8,6 +8,7 @@ function RegistPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [disable, setDisable] = useState(true);
 
     const navigate = useNavigate();
 
@@ -25,6 +26,13 @@ function RegistPage() {
           )
         .catch(err => console.error(err));
     }
+
+    useEffect(()=> {
+        if(name&&password&&email) 
+            setDisable(false);
+        else
+            setDisable(true);
+    }, [name, password, email])
 
     return (
         <div className="flex-c w-[723px] h-[512px] bg-white rounded-2xl place-items-center place-content-center">

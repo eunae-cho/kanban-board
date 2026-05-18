@@ -6,7 +6,7 @@ interface IButtonProp {
 
 const Button = ({ btnName, btnDisable, handleClick }: IButtonProp) => {
     return (
-        <button className="w-[346px] h-[46px] bg-light-purple-100 rounded-xl text-light-purple-disable" 
+        <button className={`w-[346px] h-[46px] rounded-xl ${btnDisable}? text-gray-20 bg-light-purple-disable : text-common-black bg-light-purple-able `}
             disabled={btnDisable}
             onClick={ handleClick }
             

@@ -23,10 +23,18 @@ function LoginPage() {
 
         await axios.post('/api/auth/login', params)
             .then(res => {
+                console.log('답변', res)
                 if(res.status==200) navigate('/main')
             } 
           )
-        .catch(err => console.error(err));
+        .catch(err => {
+            console.error(err)
+            if(err.status==400) alert('유효한 로그인 정보를 입력해주세요!');
+            else if(err.status==500) alert('아이디/비밀번호를 확인해주세요');
+
+            setId('')
+            setPassword('')
+        });
     }
 
     useEffect(()=> {

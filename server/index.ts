@@ -52,6 +52,15 @@ app.post('/auth/login', (req, res) => {
 
     var query = `SELECT * FROM users WHERE email = ?;`
     db.query(query, [inputId], (err, rslt) => {
+        
+        // 1. 로그인 아이디가 없는 경우
+        if(!rslt[0]) {              
+            console.error('결과 없음');
+            res.status(400).json({ success: false, message: `LOGIN FAIL - 로그인 정보가 없습니다`});
+            return;
+        }
+
+        // 2. 로그인 아이디가 있는 경우
         const userData:IUser = {
             idx: rslt[0].idx,
             name: rslt[0].name,
@@ -59,23 +68,19 @@ app.post('/auth/login', (req, res) => {
             password: rslt[0].password
         }
 
-        if(err) {
-            console.error('ERROR::LOGIN::SELECT', err);
-            return;
-        }
-        else {
-            bcrypt.compare(inputPw, rslt[0].password, (err, compareRes) => {
-                if(!compareRes) {
-                    console.error("password diff!")
-                    res.status(500).json({ success: false, message: `LOGIN FAIL - ${userData.name}님 로그인 실패`});
-                } else {
-                    generateToken(userData)
-                    res.status(200).json({ success: true, message: `LOGIN SUCCESS - ${userData.name}님 로그인 성공`});
-                }
-            })
-            
-        }
-        
+        // if(err) {
+        //     console.error('ERROR::LOGIN::SELECT', err);
+        //     return;
+        // }
+        bcrypt.compare(inputPw, rslt[0].password, (err, compareRes) => {
+            if(!compareRes) {
+                console.error("비밀번호 동일하지 않음")
+                res.status(500).json({ success: false, message: `LOGIN FAIL - ${userData.name}님 로그인 실패`});
+            } else {
+                generateToken(userData)
+                res.status(200).json({ success: true, message: `LOGIN SUCCESS - ${userData.name}님 로그인 성공`});
+            }
+        })
     })
 })
 
