@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import  jwt, { SignOptions } from "jsonwebtoken";
 import { IUser } from "../src/types";
+import { useReducer } from "react";
 
 // .env
 dotenv.config();
@@ -104,17 +105,32 @@ function generateToken(userPayload: IUser):string {
 // 회원가입 api
 app.post('/auth/regist', (req, res) => {
     const { userName, userPw, userEmail } = req.body;
-    const userPwHash = bcrypt.hashSync(userPw, 12);
-    const query = "INSERT INTO USERS(name, password, email) VALUES(?, ?, ?)";
-    db.query(query, [userName, userPwHash, userEmail], (err, rslt) => {
-        if(err) {
-            console.error('ERROR::REGISTER::INSERT', err);
-            res.status(500).json({ success: false, message: `DB FAIL - ${userName}님 회원가입 실패`});
+
+    const checkId = "SELECT * FROM users WHERE email = (?)";
+    db.query(checkId, [userEmail], (err, rslt)=> {
+        console.log(rslt[0]);
+        
+        if(rslt[0])     //아이디가 존재하는 경우
+        {
+            console.error('INAVAILABLE ID');
+            res.status(501).json({success: false, message: `중복된 아이디 ${userEmail} 입니다`});
             return;
         }
-        console.log(userPw, " / " , userPwHash);
-        res.status(200).json({ success: true, message: `DB SUCCESS - ${userName}님 회원가입 완료` });
-    } )
+        else {      //존재하지 않는 경우
+            const userPwHash = bcrypt.hashSync(userPw, 12);
+            const query = "INSERT INTO USERS(name, password, email) VALUES(?, ?, ?)";
+            db.query(query, [userName, userPwHash, userEmail], (err, rslt) => {
+                if(err) {
+                    console.error('ERROR::REGISTER::INSERT', err);
+                    res.status(500).json({ success: false, message: `DB FAIL - ${userName}님 회원가입 실패`});
+                    return;
+                }
+                console.log(userPw, " / " , userPwHash);
+                res.status(200).json({ success: true, message: `DB SUCCESS - ${userName}님 회원가입 완료` });
+            } )
+        }
+    })
+
 });
 
 const db = mysql.createConnection( {
