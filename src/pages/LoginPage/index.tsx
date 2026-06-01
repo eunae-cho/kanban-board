@@ -19,12 +19,16 @@ function LoginPage() {
     };
 
     const onClickLogin = async() => {
-        console.log(id, password);
-
         await axios.post('/api/auth/login', params)
             .then(res => {
-                console.log('답변', res)
-                if(res.status==200) navigate('/main')
+                if(res.status==200) {
+                    console.log(res.data);
+                    //localStorage 토큰 저장
+                    localStorage.setItem("Access Token", res.data.accessToken);
+                    localStorage.setItem("Refresh Token", res.data.refreshToken);
+                    //main 페이지로 이동
+                    navigate('/main')
+                }
             } 
           )
         .catch(err => {

@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import mysql from "mysql2";
+import mysql, {ResultSetHeader} from "mysql2";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import  jwt, { SignOptions } from "jsonwebtoken";
@@ -34,6 +34,9 @@ app.listen(port_num, ()=> {
 
 const SECRET_KEY = getEnv("JWT_SECRET_KEY");
 const EXPIRES_IN = getEnv("JWT_EXPIRES_IN") as SignOptions["expiresIn"] ;
+
+const REFRESH_KEY = getEnv("REFRESH_TOKEN");
+const REFRESH_IN = getEnv("REFRESH_EXPIRES_IN") as SignOptions["expiresIn"];
 
 //환경변수 가져오기
 function getEnv(key: string): string {
@@ -78,15 +81,21 @@ app.post('/auth/login', (req, res) => {
                 console.error("비밀번호 동일하지 않음")
                 res.status(500).json({ success: false, message: `LOGIN FAIL - ${userData.name}님 로그인 실패`});
             } else {
-                generateToken(userData)
-                res.status(200).json({ success: true, message: `LOGIN SUCCESS - ${userData.name}님 로그인 성공`});
+                const accessToken = generateAccessToken(userData)
+                const refreshToken = generateRefreshToken(userData)
+
+                var isSaveToken = saveRefreshToken(refreshToken, userData.idx);
+                
+                if(isSaveToken) {
+                    res.status(200).json({ success: true, message: `LOGIN SUCCESS - ${userData.name}님 로그인 성공`, accessToken: accessToken, refreshToken: refreshToken});
+                }
             }
         })
     })
 })
 
 //JWT 생성 함수
-function generateToken(userPayload: IUser):string {
+function generateAccessToken(userPayload: IUser):string {
     const token = jwt.sign(
         {
             idx: userPayload.idx,
@@ -97,8 +106,37 @@ function generateToken(userPayload: IUser):string {
         { expiresIn: EXPIRES_IN }
     );
 
-    console.log(token);
     return token;
+}
+
+function generateRefreshToken(userPayload: IUser):string {
+    const token = jwt.sign(
+        {
+            idx: userPayload.idx,
+            name: userPayload.name,
+            email: userPayload.email
+        },
+        REFRESH_KEY,
+        { expiresIn: REFRESH_IN }
+    );
+
+    return token;
+}
+
+function saveRefreshToken(token: string, idx: number): boolean {    
+        var saveResult = false;
+        var query = "UPDATE users SET refresh_token = (?) where idx = (?)"
+        db.query(query, [token, idx], (err, rslt:ResultSetHeader) => {
+            if(err) {
+                console.error("SaveRefreshToken 에러 발생 : ", err);
+                saveResult = false;
+            } else if(rslt.affectedRows>0) {
+                saveResult = true;
+            }
+            console.log('rslt.affectedRows', rslt.affectedRows)
+        })
+        console.log('saveResult', saveResult)
+        return saveResult;
 }
 
 
@@ -158,5 +196,3 @@ app.get('/', (req, res) => {
 app.get('/regist', (req, res) => {
     return res.send("회원가입 화면");
 });
-
-
