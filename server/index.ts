@@ -72,11 +72,8 @@ app.post('/auth/login', (req, res) => {
             password: rslt[0].password
         }
 
-        // if(err) {
-        //     console.error('ERROR::LOGIN::SELECT', err);
-        //     return;
-        // }
-        bcrypt.compare(inputPw, rslt[0].password, (err, compareRes) => {
+        // 2-1. 로그인 비밀번호 비교
+        bcrypt.compare(inputPw, rslt[0].password, async (err, compareRes) => {
             if(!compareRes) {
                 console.error("비밀번호 동일하지 않음")
                 res.status(500).json({ success: false, message: `LOGIN FAIL - ${userData.name}님 로그인 실패`});
@@ -84,7 +81,7 @@ app.post('/auth/login', (req, res) => {
                 const accessToken = generateAccessToken(userData)
                 const refreshToken = generateRefreshToken(userData)
 
-                var isSaveToken = saveRefreshToken(refreshToken, userData.idx);
+                const isSaveToken = await saveRefreshToken(refreshToken, userData.idx);
                 
                 if(isSaveToken) {
                     res.status(200).json({ success: true, message: `LOGIN SUCCESS - ${userData.name}님 로그인 성공`, accessToken: accessToken, refreshToken: refreshToken});
@@ -123,20 +120,18 @@ function generateRefreshToken(userPayload: IUser):string {
     return token;
 }
 
-function saveRefreshToken(token: string, idx: number): boolean {    
-        var saveResult = false;
-        var query = "UPDATE users SET refresh_token = (?) where idx = (?)"
-        db.query(query, [token, idx], (err, rslt:ResultSetHeader) => {
-            if(err) {
-                console.error("SaveRefreshToken 에러 발생 : ", err);
-                saveResult = false;
-            } else if(rslt.affectedRows>0) {
-                saveResult = true;
-            }
-            console.log('rslt.affectedRows', rslt.affectedRows)
-        })
-        console.log('saveResult', saveResult)
-        return saveResult;
+function saveRefreshToken(token: string, idx: number): Promise<boolean> {    
+        return new Promise((resolve, reject) => {
+            var query = "UPDATE users SET refresh_token = (?) where idx = (?)"
+            db.query(query, [token, idx], (err, rslt:ResultSetHeader) => {
+                if(err) {
+                    console.error("SaveRefreshToken 에러 발생 : ", err);
+                    reject(err);
+                } else if(rslt.affectedRows>0) {
+                    resolve(rslt.affectedRows>0);
+                }
+            });
+        });
 }
 
 

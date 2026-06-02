@@ -22,11 +22,11 @@ function LoginPage() {
         await axios.post('/api/auth/login', params)
             .then(res => {
                 if(res.status==200) {
-                    console.log(res.data);
-                    //localStorage 토큰 저장
+                    //1. localStorage 로그인 토큰 저장
                     localStorage.setItem("Access Token", res.data.accessToken);
                     localStorage.setItem("Refresh Token", res.data.refreshToken);
-                    //main 페이지로 이동
+
+                    //2. main 페이지로 이동(로그인 과정이 인증과정이라 따로 인증 필요없음)
                     navigate('/main')
                 }
             } 
