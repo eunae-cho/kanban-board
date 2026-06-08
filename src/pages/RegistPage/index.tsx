@@ -27,7 +27,7 @@ function RegistPage() {
         .catch(err => {
             if(err.status == 501) {
                 alert('중복된 아이디 입니다!');
-
+                
                 //이메일 부분 애니메이션 넣기
 
                 return;
